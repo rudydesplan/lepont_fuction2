@@ -14,8 +14,8 @@ def compress_and_upload_files():
     # Calculer la date du jour précédent
     yesterday = datetime.now() - timedelta(1)
     yesterday_str = yesterday.strftime('%Y-%m-%d')
-    tar_name = f"{yesterday_str}.tar"
-    gzip_name = f"{tar_name}.gz"
+    tar_name = f"/tmp/{yesterday_str}.tar"
+    gzip_name = f"/tmp/{yesterday_str}.tar.gz"
 
     # Sélectionner tous les fichiers du dossier du jour précédent
     blobs = container_client.list_blobs(name_starts_with=yesterday_str)
@@ -26,11 +26,11 @@ def compress_and_upload_files():
             blob_client = container_client.get_blob_client(blob.name)
             blob_data = blob_client.download_blob().readall()
             # Écrire le contenu du blob dans un fichier temporaire
-            temp_file_name = blob.name.split('/')[-1]  # Extraire le nom du fichier depuis le chemin complet
+            temp_file_name = f"/tmp/{blob.name.split('/')[-1]}"  # Extraire le nom du fichier depuis le chemin complet
             with open(temp_file_name, "wb") as temp_file:
                 temp_file.write(blob_data)
             # Ajouter le fichier temporaire au tar
-            tar.add(temp_file_name)
+            tar.add(temp_file_name, arcname=blob.name.split('/')[-1])
             # Supprimer le fichier temporaire
             os.remove(temp_file_name)
 
@@ -43,7 +43,7 @@ def compress_and_upload_files():
     os.remove(tar_name)
 
     # Uploader le fichier .gzip dans le dossier d'archive
-    blob_client = blob_service_client.get_blob_client(container=container_name, blob=f'archive/{gzip_name}')
+    blob_client = blob_service_client.get_blob_client(container=container_name, blob=f'archive/{gzip_name.split("/")[-1]}')
     with open(gzip_name, "rb") as data:
         blob_client.upload_blob(data, overwrite=True)
 
