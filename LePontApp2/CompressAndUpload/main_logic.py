@@ -20,6 +20,12 @@ def compress_and_upload_files():
     # Sélectionner tous les fichiers du dossier du jour précédent
     blobs = container_client.list_blobs(name_starts_with=yesterday_str)
 
+    # Check if there are any files for the specified date
+    if not blobs:
+        # If no blobs found for yesterday, log and exit the function
+        print(f"No files found for {yesterday_str}, skipping compression and upload.")
+        return
+
     # Créer un fichier tar avec tous les fichiers sélectionnés
     with tarfile.open(tar_name, "w") as tar:
         for blob in blobs:
